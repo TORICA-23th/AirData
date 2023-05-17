@@ -6,14 +6,14 @@
 #include <SD.h>
 #include <TORICA_SD.h>
 
-#define SerialIN  Serial
-#define SerialOUT Serial
+#define SerialIN  Serial1
+#define SerialOUT Serial1
 
 SensirionI2CSdp sdp;
 volatile uint16_t error;
 char errorMessage[256];
 
-int cs_SD = 2;
+int cs_SD = 28;
 TORICA_SD sd(cs_SD);
 char SD_BUF[256];
 
@@ -21,23 +21,29 @@ char SD_BUF[256];
 Adafruit_DPS310 dps;
 sensors_event_t temp_event, pressure_event;
 
-volatile float altitude_progress ;
-volatile float altitude = 0;
-volatile float pressure = 0;
-volatile float temperature = 0;
-volatile float rho_kgm3 = 0;
-volatile float airspeed_ms = 0;
-volatile float differentialPressure_Pa = 0;
-volatile float temperature_C = 0;
+float altitude_progress ;
+float altitude = 0;
+float pressure = 0;
+float temperature = 0;
+float rho_kgm3 = 0;
+float airspeed_ms = 0;
+float differentialPressure_Pa = 0;
+float temperature_C = 0;
 
 char buf[256];
 
 void setup() {
+  Serial1.setFIFOSize(1024);
   Serial.begin(460800);
   Serial1.begin(460800);
 
-  while (!Serial) {}
+  pinMode(16, OUTPUT);
+  pinMode(25, OUTPUT);
 
+
+  //while (!Serial) {}
+
+  Wire.setClock(1000000);
   Wire.begin();
 
   sdp.begin(Wire, SDP8XX_I2C_ADDRESS_0);
@@ -101,7 +107,8 @@ void setup1() {
 const int readUART_BUF_SIZE = 256;
 char readUART_BUF[256];
 void loop() {
-  if (SerialIN.available()) {
+  while (SerialIN.available()) {
+    pinMode(16, LOW);
     int read_length = SerialIN.available();
     if (read_length >= readUART_BUF_SIZE - 1) {
       read_length = readUART_BUF_SIZE - 1;
@@ -109,47 +116,45 @@ void loop() {
     SerialIN.readBytes(readUART_BUF, read_length);
     readUART_BUF[read_length] = '\0';
     sd.add_str(readUART_BUF);
-
+    if (!SerialIN.available()) {
+      delay(1);
+    }
+    pinMode(16, HIGH);
   }
 
+  if (dps.temperatureAvailable() && dps.pressureAvailable()) {
+    pinMode(25, LOW);
+    dps.getEvents(&temp_event, &pressure_event);
+    pressure = pressure_event.pressure;
+    temperature = temp_event.temperature;
 
-  /*
-    if (dps.temperatureAvailable() && dps.pressureAvailable()) {
-      dps.getEvents(&temp_event, &pressure_event);
-      pressure = pressure_event.pressure;
-      temperature = temp_event.temperature;
+    altitude_progress = pow(1013.25 / pressure, 1 / 5.257);
+    altitude = (altitude_progress - 1) * (temperature + 273.15) / 0.0065;
 
-      altitude_progress = pow(1013.25 / pressure, 1 / 5.257);
-      altitude = (altitude_progress - 1) * (temperature + 273.15) / 0.0065;
-
-      //追加
-      error = sdp.readMeasurement(differentialPressure_Pa, temperature_C);
-      if (error) {
-        Serial.print("Error trying to execute readMeasurement(): ");
-        errorToString(error, errorMessage, 256);
-        Serial.println(errorMessage);
-      } else {
-        rho_kgm3 = 0.0034837 * 101325.0 / (temperature_C + 273.5);
-        airspeed_ms = sqrt(abs(2.0 * differentialPressure_Pa / rho_kgm3));
-
-      }
-      sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%.2f\n", pressure, temperature, altitude, differentialPressure_Pa , airspeed_ms);
-      SerialOUT.print(buf);
-
+    //追加
+    float _differentialPressure_Pa = 0;
+    float _temperature_C = 0;
+    error = sdp.readMeasurement(_differentialPressure_Pa, _temperature_C);
+    differentialPressure_Pa = _differentialPressure_Pa;
+    temperature_C = _temperature_C;
+    if (error) {
+      Serial.print("Error trying to execute readMeasurement(): ");
+      errorToString(error, errorMessage, 256);
+      Serial.println(errorMessage);
+    } else {
+      rho_kgm3 = 0.0034837 * 101325.0 / (temperature_C + 273.5);
+      airspeed_ms = sqrt(abs(2.0 * differentialPressure_Pa / rho_kgm3));
 
     }
-  */
-
+    sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%.2f\n", pressure, temperature, altitude, differentialPressure_Pa , airspeed_ms);
+    SerialOUT.print(buf);
+    pinMode(25, HIGH);
+  }
+  //delay(2);
 }
 
 void loop1() {
-
   // SDに書き込み
   sd.flash();
-  delay(100);
-
-}
-
-void timerIsr() {
-
+  delay(10);
 }
