@@ -17,9 +17,11 @@ int cs_SD = 28;
 TORICA_SD sd(cs_SD);
 char SD_BUF[256];
 
-
 Adafruit_DPS310 dps;
 sensors_event_t temp_event, pressure_event;
+
+int URECHO = 26; // PWM Output 0-50000US,Every 50US represent 1cm
+int URTRIG = 27; // trigger pin
 
 float altitude_progress ;
 float altitude = 0;
@@ -29,6 +31,7 @@ float rho_kgm3 = 0;
 float airspeed_ms = 0;
 float differentialPressure_Pa = 0;
 float temperature_C = 0;
+float altitude_ultrasonic_m=0;
 
 char buf[256];
 
@@ -99,6 +102,9 @@ void setup() {
 
 void setup1() {
 
+  pinMode(URTRIG, OUTPUT);    // A low pull on pin COMP/TRIG
+  digitalWrite(URTRIG, HIGH); // Set to HIGH
+  pinMode(URECHO, INPUT);     // Sending Enable PWM mode command
 
   sd.begin();
 
@@ -146,15 +152,23 @@ void loop() {
       airspeed_ms = sqrt(abs(2.0 * differentialPressure_Pa / rho_kgm3));
 
     }
-    sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%.2f\n", pressure, temperature, altitude, differentialPressure_Pa , airspeed_ms);
+    sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%.2f\n", pressure, temperature, altitude, differentialPressure_Pa , altitude_ultrasonic_m);
     SerialOUT.print(buf);
     pinMode(25, HIGH);
   }
-  //delay(2);
 }
 
 void loop1() {
-  // SDに書き込み
+  digitalWrite(URTRIG, LOW);
+  delay(1);
+  digitalWrite(URTRIG, HIGH);
+  unsigned long LowLevelTime = pulseIn(URECHO, LOW);
+  if (LowLevelTime <= 50000)
+  {
+    unsigned int DistanceMeasured = LowLevelTime / 50; // every 50us low level stands for 1cm
+    altitude_ultrasonic_m = (float)DistanceMeasured / 100.0;
+    Serial.println(altitude_ultrasonic_m);
+  }
   sd.flash();
   delay(10);
 }
