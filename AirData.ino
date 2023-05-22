@@ -20,14 +20,13 @@ char SD_BUF[256];
 Adafruit_DPS310 dps;
 sensors_event_t temp_event, pressure_event;
 
-volatile float altitude_progress ;
-volatile float altitude = 0;
-volatile float pressure = 0;
-volatile float temperature = 0;
-volatile float rho_kgm3 = 0;
-volatile float airspeed_ms = 0;
-volatile float differentialPressure_Pa = 0;
-volatile float temperature_C = 0;
+volatile float dps_altitude_m = 0;
+volatile float dps_pressure_hPa = 0;
+volatile float dps_temperature_deg = 0;
+volatile float sdp_airspeed_ms = 0;
+volatile float sdp_differentialPressure_Pa = 0;
+volatile float sdp_airspeed_mss = 0;
+volatile float sdp_temperature_deg = 0;
 
 char buf[256];
 
@@ -38,9 +37,6 @@ void setup() {
 
   pinMode(16, OUTPUT);
   pinMode(25, OUTPUT);
-
-
-  //while (!Serial) {}
 
   Wire.setClock(1000000);
   Wire.begin();
@@ -55,7 +51,8 @@ void setup() {
 
   error = sdp.readProductIdentifier(productNumber, serialNumber,
                                     serialNumberSize);
-  if (error) {
+  if (error)
+  {
     Serial.print("Error trying to execute readProductIdentifier(): ");
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
@@ -80,27 +77,19 @@ void setup() {
     Serial.println(errorMessage);
   }
 
-
   Serial.println("DPS310");
   if (! dps.begin_I2C()) {             // Can pass in I2C address here
     //if (! dps.begin_SPI(DPS310_CS)) {  // If you want to use SPI
     Serial.println("Failed to find DPS");
     while (1) yield();
   }
-
-
   Serial.println("DPS OK!");
-
   dps.configurePressure(DPS310_32HZ, DPS310_16SAMPLES);
   dps.configureTemperature(DPS310_32HZ, DPS310_2SAMPLES);
-
 }
 
 void setup1() {
-
-
   sd.begin();
-
 }
 
 const int readUART_BUF_SIZE = 256;
@@ -124,28 +113,27 @@ void loop() {
   if (dps.temperatureAvailable() && dps.pressureAvailable()) {
     pinMode(25, LOW);
     dps.getEvents(&temp_event, &pressure_event);
-    pressure = pressure_event.pressure;
-    temperature = temp_event.temperature;
+    dps_pressure_hPa = pressure_event.pressure;
+    dps_temperature_deg = temp_event.temperature;
 
-    altitude_progress = pow(1013.25 / pressure, 1 / 5.257);
-    altitude = (altitude_progress - 1) * (temperature + 273.15) / 0.0065;
+    dps_altitude_m = (pow(1013.25 / dps_pressure_hPa, 1 / 5.257) - 1) * (dps_temperature_deg + 273.15) / 0.0065;
 
-    //追加
-    float _differentialPressure_Pa = 0;
-    float _temperature_C = 0;
-    error = sdp.readMeasurement(_differentialPressure_Pa, _temperature_C);
-    differentialPressure_Pa = _differentialPressure_Pa;
-    temperature_C = _temperature_C;
-    if (error) {
+    float _sdp_differentialPressure_Pa = 0;
+    float _sdp_temperature_deg = 0;
+    error = sdp.readMeasurement(_sdp_differentialPressure_Pa, _sdp_temperature_deg);
+    sdp_differentialPressure_Pa = _sdp_differentialPressure_Pa;
+    sdp_temperature_deg = _sdp_temperature_deg;
+    if (error)
+    {
       Serial.print("Error trying to execute readMeasurement(): ");
       errorToString(error, errorMessage, 256);
       Serial.println(errorMessage);
-    } else {
-      rho_kgm3 = 0.0034837 * 101325.0 / (temperature_C + 273.5);
-      airspeed_ms = sqrt(abs(2.0 * differentialPressure_Pa / rho_kgm3));
-
     }
-    sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%.2f\n", pressure, temperature, altitude, differentialPressure_Pa , airspeed_ms);
+    else
+    {
+      sdp_airspeed_ms = sqrt(abs(2.0 * sdp_differentialPressure_Pa / (0.0034837 * 101325.0 / (dps_temperature_deg + 273.5))));
+    }
+    sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%.2f\n", dps_pressure_hPa, dps_temperature_deg, dps_altitude_m, sdp_differentialPressure_Pa, sdp_airspeed_ms);
     SerialOUT.print(buf);
     pinMode(25, HIGH);
   }
