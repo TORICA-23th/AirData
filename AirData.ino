@@ -20,14 +20,14 @@ char SD_BUF[256];
 Adafruit_DPS310 dps;
 sensors_event_t temp_event, pressure_event;
 
-float altitude_progress ;
-float altitude = 0;
-float pressure = 0;
-float temperature = 0;
-float rho_kgm3 = 0;
-float airspeed_ms = 0;
-float differentialPressure_Pa = 0;
-float temperature_C = 0;
+volatile float altitude_progress ;
+volatile float altitude = 0;
+volatile float pressure = 0;
+volatile float temperature = 0;
+volatile float rho_kgm3 = 0;
+volatile float airspeed_ms = 0;
+volatile float differentialPressure_Pa = 0;
+volatile float temperature_C = 0;
 
 char buf[256];
 
@@ -153,5 +153,5 @@ void loop() {
 
 void loop1() {
   sd.flash();
-  delay(10);
+  delay(5);
 }
