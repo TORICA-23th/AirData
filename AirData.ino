@@ -28,8 +28,6 @@ volatile float sdp_differentialPressure_Pa = 0;
 volatile float sdp_airspeed_mss = 0;
 volatile float sdp_temperature_deg = 0;
 
-char buf[256];
-
 void setup() {
   Serial1.setFIFOSize(1024);
   Serial.begin(460800);
@@ -94,6 +92,7 @@ void setup1() {
 
 const int readUART_BUF_SIZE = 256;
 char readUART_BUF[256];
+char sendUART_BUF[256];
 void loop() {
   while (SerialIN.available()) {
     pinMode(16, LOW);
@@ -133,8 +132,8 @@ void loop() {
     {
       sdp_airspeed_ms = sqrt(abs(2.0 * sdp_differentialPressure_Pa / (0.0034837 * 101325.0 / (dps_temperature_deg + 273.5))));
     }
-    sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%.2f\n", dps_pressure_hPa, dps_temperature_deg, dps_altitude_m, sdp_differentialPressure_Pa, sdp_airspeed_ms);
-    SerialOUT.print(buf);
+    sprintf(sendUART_BUF, "%.2f,%.2f,%.2f,%.2f,%.2f\n", dps_pressure_hPa, dps_temperature_deg, dps_altitude_m, sdp_differentialPressure_Pa, sdp_airspeed_ms);
+    SerialOUT.print(sendUART_BUF);
     pinMode(25, HIGH);
   }
 }
