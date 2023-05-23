@@ -5,6 +5,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <TORICA_SD.h>
+#include <Adafruit_NeoPixel.h>
 
 #define SerialIN  Serial1
 #define SerialOUT Serial1
@@ -28,6 +29,12 @@ volatile float sdp_differentialPressure_Pa = 0;
 volatile float sdp_airspeed_mss = 0;
 volatile float sdp_temperature_deg = 0;
 
+int Power = 11;
+int PIN  = 12;
+#define NUMPIXELS 1
+
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
 void setup() {
   Serial1.setFIFOSize(1024);
   Serial.begin(460800);
@@ -35,6 +42,7 @@ void setup() {
 
   pinMode(16, OUTPUT);
   pinMode(25, OUTPUT);
+  pinMode(17, OUTPUT);
 
   Wire.setClock(1000000);
   Wire.begin();
@@ -84,6 +92,10 @@ void setup() {
   Serial.println("DPS OK!");
   dps.configurePressure(DPS310_32HZ, DPS310_16SAMPLES);
   dps.configureTemperature(DPS310_32HZ, DPS310_2SAMPLES);
+
+  pixels.begin();
+  pinMode(Power, OUTPUT);
+  digitalWrite(Power, HIGH);
 }
 
 void setup1() {
@@ -95,7 +107,9 @@ char readUART_BUF[256];
 char sendUART_BUF[256];
 void loop() {
   while (SerialIN.available()) {
-    pinMode(16, LOW);
+    pixels.clear();
+    pixels.setPixelColor(0, pixels.Color(255, 0, 0));
+    pixels.show();
     int read_length = SerialIN.available();
     if (read_length >= readUART_BUF_SIZE - 1) {
       read_length = readUART_BUF_SIZE - 1;
@@ -106,11 +120,14 @@ void loop() {
     if (!SerialIN.available()) {
       delay(1);
     }
-    pinMode(16, HIGH);
+    pixels.clear();
+    pixels.show();
   }
 
   if (dps.temperatureAvailable() && dps.pressureAvailable()) {
-    pinMode(25, LOW);
+    pixels.clear();
+    pixels.setPixelColor(0, pixels.Color(0, 0, 255));
+    pixels.show();
     dps.getEvents(&temp_event, &pressure_event);
     dps_pressure_hPa = pressure_event.pressure;
     dps_temperature_deg = temp_event.temperature;
@@ -134,11 +151,21 @@ void loop() {
     }
     sprintf(sendUART_BUF, "%.2f,%.2f,%.2f,%.2f,%.2f\n", dps_pressure_hPa, dps_temperature_deg, dps_altitude_m, sdp_differentialPressure_Pa, sdp_airspeed_ms);
     SerialOUT.print(sendUART_BUF);
-    pinMode(25, HIGH);
+
+    pixels.clear();
+    pixels.show();
   }
 }
 
+void LEDwrite(int status) {
+  digitalWrite(25, status);
+  digitalWrite(17, status);
+  digitalWrite(16, status);
+}
+
 void loop1() {
+  LEDwrite(LOW);
   sd.flash();
+  LEDwrite(HIGH);
   delay(5);
 }
