@@ -157,15 +157,22 @@ void loop() {
   }
 }
 
-void LEDwrite(int status) {
+/*void LEDwrite(int status) {
   digitalWrite(25, status);
   digitalWrite(17, status);
   digitalWrite(16, status);
+}*/
+
+void LEDtoggle(){
+  digitalWrite(25, !digitalRead(25));
+  digitalWrite(17, !digitalRead(25));
+  digitalWrite(16, !digitalRead(25));
 }
 
 void loop1() {
-  LEDwrite(LOW);
+  //static bool led_condition = True;
   sd.flash();
-  LEDwrite(HIGH);
-  delay(5);
+  LEDtoggle();
+  //delay(5);
+  
 }
