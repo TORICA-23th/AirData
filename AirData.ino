@@ -44,7 +44,7 @@ void setup() {
   pinMode(25, OUTPUT);
   pinMode(17, OUTPUT);
 
-  Wire.setClock(1000000);
+  Wire.setClock(400000);
   Wire.begin();
 
   sdp.begin(Wire, SDP8XX_I2C_ADDRESS_0);
