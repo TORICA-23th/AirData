@@ -15,7 +15,7 @@ char errorMessage[256];
 
 int cs_SD = 28;
 TORICA_SD sd(cs_SD);
-char SD_BUF[256];
+char SD_BUF[256]; 
 
 Adafruit_DPS310 dps;
 sensors_event_t temp_event, pressure_event;
