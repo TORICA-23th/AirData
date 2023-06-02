@@ -3,7 +3,6 @@
 #include <SensirionI2CSdp.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <SD.h>
 #include <TORICA_SD.h>
 #include <Adafruit_NeoPixel.h>
 
