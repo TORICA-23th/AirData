@@ -28,11 +28,11 @@ volatile float sdp_differentialPressure_Pa = 0;
 volatile float sdp_airspeed_mss = 0;
 volatile float sdp_temperature_deg = 0;
 
-int Power = 11;
-int PIN  = 12;
+int NEO_Power = 11;
+int NEO_PIN  = 12;
 #define NUMPIXELS 1
 
-Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels(NUMPIXELS, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
 void setup() {
   Serial1.setFIFOSize(1024);
@@ -43,19 +43,16 @@ void setup() {
   pinMode(25, OUTPUT);
   pinMode(17, OUTPUT);
 
+  delay(100);
   Wire.setClock(400000);
   Wire.begin();
 
   sdp.begin(Wire, SDP8XX_I2C_ADDRESS_0);
-
   uint32_t productNumber;
   uint8_t serialNumber[8];
   uint8_t serialNumberSize = 8;
-
   sdp.stopContinuousMeasurement();
-
-  error = sdp.readProductIdentifier(productNumber, serialNumber,
-                                    serialNumberSize);
+  error = sdp.readProductIdentifier(productNumber, serialNumber, serialNumberSize);
   if (error)
   {
     Serial.print("Error trying to execute readProductIdentifier(): ");
@@ -73,7 +70,6 @@ void setup() {
     Serial.println();
   }
   error = sdp.startContinuousMeasurementWithDiffPressureTCompAndAveraging();
-
   if (error) {
     Serial.print(
       "Error trying to execute "
@@ -83,18 +79,18 @@ void setup() {
   }
 
   Serial.println("DPS310");
-  if (! dps.begin_I2C()) {             // Can pass in I2C address here
+  while (! dps.begin_I2C()) {             // Can pass in I2C address here
     //if (! dps.begin_SPI(DPS310_CS)) {  // If you want to use SPI
     Serial.println("Failed to find DPS");
-    while (1) yield();
+    delay(100);
   }
   Serial.println("DPS OK!");
   dps.configurePressure(DPS310_32HZ, DPS310_16SAMPLES);
   dps.configureTemperature(DPS310_32HZ, DPS310_2SAMPLES);
 
+  pinMode(NEO_Power, OUTPUT);
+  digitalWrite(NEO_Power, HIGH);
   pixels.begin();
-  pinMode(Power, OUTPUT);
-  digitalWrite(Power, HIGH);
 
   //delay for setup1
   delay(100);
