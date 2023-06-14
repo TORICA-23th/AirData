@@ -95,6 +95,13 @@ void setup() {
   pixels.begin();
   pinMode(Power, OUTPUT);
   digitalWrite(Power, HIGH);
+
+  //delay for setup1
+  delay(100);
+  
+  while (SerialIN.available()) {
+    SerialIN.read();
+  }
 }
 
 void setup1() {
