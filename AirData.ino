@@ -44,8 +44,11 @@ void setup() {
   pinMode(17, OUTPUT);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   Wire.setClock(100000);
 =======
+=======
+>>>>>>> a478bf68c97abe20a10f97dc09970ee15dd35e6c
   delay(100);
   Wire.setClock(400000);
 >>>>>>> a478bf68c97abe20a10f97dc09970ee15dd35e6c
