@@ -43,15 +43,8 @@ void setup() {
   pinMode(25, OUTPUT);
   pinMode(17, OUTPUT);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  Wire.setClock(100000);
-=======
-=======
->>>>>>> a478bf68c97abe20a10f97dc09970ee15dd35e6c
   delay(100);
   Wire.setClock(400000);
->>>>>>> a478bf68c97abe20a10f97dc09970ee15dd35e6c
   Wire.begin();
 
   sdp.begin(Wire, SDP8XX_I2C_ADDRESS_0);
@@ -99,16 +92,11 @@ void setup() {
   digitalWrite(NEO_Power, HIGH);
   pixels.begin();
 
-  //delay for setup1
-  delay(100);
+  sd.begin();
   
   while (SerialIN.available()) {
     SerialIN.read();
   }
-}
-
-void setup1() {
-  sd.begin();
 }
 
 const int readUART_BUF_SIZE = 256;
@@ -164,6 +152,7 @@ void loop() {
     pixels.clear();
     pixels.show();
   }
+  sd.flash();
 }
 
 /*void LEDwrite(int status) {
@@ -176,12 +165,4 @@ void LEDtoggle(){
   digitalWrite(25, !digitalRead(25));
   digitalWrite(17, !digitalRead(25));
   digitalWrite(16, !digitalRead(25));
-}
-
-void loop1() {
-  //static bool led_condition = True;
-  sd.flash();
-  LEDtoggle();
-  //delay(5);
-  
 }
